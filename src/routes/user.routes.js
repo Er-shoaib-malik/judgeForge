@@ -1,11 +1,9 @@
 import { Router } from "express";
+import { registerUser ,loginUser} from "../middlewares/user.controller.js";
 
 const router = Router() ;
 
-router.route("/login").get(
-    (req,res)=>{
-        res.send("Login Route")
-    }
-)
+router.route("/register").post(registerUser)
+router.route("/login").post(loginUser)
 
-export default router
+export default router ;
