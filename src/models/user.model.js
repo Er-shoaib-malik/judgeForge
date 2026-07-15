@@ -28,6 +28,11 @@ const userSchema = new Schema(
       required: true,
     },
 
+    avatar : {
+    type : String ,  // cloudinary url
+    required : true
+    } ,
+
     rating: {
       type: Number,
       default: 0,
