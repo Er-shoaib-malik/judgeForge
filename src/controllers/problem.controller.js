@@ -5,6 +5,7 @@ import { User} from "../models/user.model.js"
 import { Problem } from "../models/problem.model.js";
 import { Submission } from "../models/submission.model.js";
 import mongoose from "mongoose";
+import submissionQueue from "../queue/submission.queue.js";
 
 const createProblem = asyncHandler(async (req,res) => {
     const {title, difficulty, constraints ,statement ,examples,timeLimit ,memoryLimit} = req.body
@@ -168,6 +169,13 @@ const submitProblem = asyncHandler(async (req,res) => {
         language ,
         code
     })
+
+    await submissionQueue.add(
+        "execute-submission",
+        {
+            submissionId : submission._id.toString(),
+        }
+    )
 
     return res
     .status(201)
