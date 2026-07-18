@@ -1,15 +1,19 @@
 import { Router } from "express";
-import { verifyJWT ,isAdmin} from "../middlewares/auth.middleware";
+import { verifyJWT ,isAdmin} from "../middlewares/auth.middleware.js";
+import { createProblem, deleteProblem, getAllProblems, getProblemById, updateProblem, submitProblem } from "../controllers/problem.controller.js";
 
 const router = Router() ;
 
 router.use(verifyJWT)
 
-router.route("/problems").get((req,res) => {res.send("problems fetch")})
-router.route("/problems/:id").get((req,res)=>{res.send("problem fetch")})
+router.route("/").get(getAllProblems)
+router.route("/:problemId").get(getProblemById)
+router.route("/:problemId/submit").post(submitProblem)
 
-router.route("/problems").post(isAdmin,(req,res)=>{res.send("Problem post")})
-router.route("/problems").put(isAdmin,(req,res)=>{res.send("problem update")})
-router.route("/problems").delete(isAdmin,(req,res)=>{res.send("problem delete")})
+router.use(isAdmin)
+
+router.route("/").post(createProblem)
+router.route("/:problemId").patch(updateProblem)
+router.route("/:problemId").delete(deleteProblem)
 
 export default router ;
