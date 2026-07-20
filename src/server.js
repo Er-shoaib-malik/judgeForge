@@ -2,6 +2,7 @@ import dotenv from "dotenv"
 import express from "express"
 import app from "./app.js"
 import connectDB from "./config/db.js";
+import "./workers/submission.worker.js"
 
 dotenv.config({
     path: './.env'

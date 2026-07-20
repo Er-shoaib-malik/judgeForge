@@ -164,11 +164,12 @@ const submitProblem = asyncHandler(async (req,res) => {
     }
 
     const submission = await Submission.create({
-        problemId : problemId ,
-        userId : req.user._id ,
-        language ,
-        code
-    })
+        problemId,
+        userId: req.user._id,
+        language,
+        code,
+        status: "PENDING",
+    });
 
     await submissionQueue.add(
         "execute-submission",
