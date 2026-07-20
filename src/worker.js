@@ -1,1 +1,0 @@
-import "./workers/submission.worker.js";
