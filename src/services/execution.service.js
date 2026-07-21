@@ -1,7 +1,8 @@
 import {Submission} from "../models/submission.model.js";
-import { createSubmissionDirectory, writeSourceCode } from "../utils/fileManager.js";
+import { createSubmissionDirectory, writeSourceCode, writeInputFile, readOutputFile } from "../utils/fileManager.js";
 import compileCpp from "../compiler/cpp/compilerCpp.js";
 import runCpp from "../compiler/cpp/runCpp.js";
+import path from "path";
 
 const executeSubmission = async (submissionId) => {
 
@@ -38,14 +39,25 @@ const executeSubmission = async (submissionId) => {
 
             console.log("After compile");
 
-            console.log("Before run");
-            console.log(executablePath);
-            const output = await runCpp(
-                executablePath,
+            const inputFilePath = await writeInputFile(
+                workingDirectory,
                 "5 10"
             );
 
-            console.log("After run");
+            const outputFilePath = path.join(
+                workingDirectory,
+                "output.txt"
+            );
+
+            await runCpp(
+                executablePath,
+                inputFilePath,
+                outputFilePath
+            );
+
+            const output = await readOutputFile(
+                workingDirectory
+            );
 
             console.log("Program Output:", output);
             break;

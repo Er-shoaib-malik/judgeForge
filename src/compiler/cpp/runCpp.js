@@ -1,42 +1,32 @@
-import { spawn } from "child_process";
+import { exec } from "child_process";
+import { promisify } from "util";
+import path from "path";
 
-const runCpp = (executablePath, input = "") => {
-    return new Promise((resolve, reject) => {
+const execPromise = promisify(exec);
 
-        const child = spawn(executablePath);
+const runCpp = async (
+    executablePath,
+    inputFilePath,
+    outputFilePath
+) => {
 
-        let stdout = "";
-        let stderr = "";
+    let command;
 
-        child.stdout.on("data", (data) => {
-            stdout += data.toString();
-        });
+    if (process.platform === "win32") {
 
-        child.stderr.on("data", (data) => {
-            stderr += data.toString();
-        });
+        command = `"${executablePath}" < "${inputFilePath}" > "${outputFilePath}"`;
 
-        child.on("error", reject);
+    } else {
 
-        child.on("close", (code) => {
-            if (code !== 0) {
-                return reject(new Error(stderr));
-            }
+        command = `"${executablePath}" < "${inputFilePath}" > "${outputFilePath}"`;
 
-            resolve(stdout.trim());
-        });
+    }
 
-        // Send input to stdin
-        child.stdin.write(input);
-        child.stdin.end();
-
-        // Timeout
-        setTimeout(() => {
-            child.kill();
-            reject(new Error("Time Limit Exceeded"));
-        }, 2000);
-
+    await execPromise(command, {
+        timeout: 2000,
+        maxBuffer: 1024 * 1024
     });
+
 };
 
 export default runCpp;

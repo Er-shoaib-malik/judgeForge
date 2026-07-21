@@ -55,3 +55,35 @@ export const writeSourceCode = async (
 
     return sourceCodePath;
 };
+
+export const writeInputFile = async (
+    submissionDirectory,
+    input
+) => {
+
+    const inputFilePath = path.join(
+        submissionDirectory,
+        "input.txt"
+    );
+
+    await fs.writeFile(inputFilePath, input);
+
+    return inputFilePath;
+};
+
+export const readOutputFile = async (
+    submissionDirectory
+) => {
+
+    const outputFilePath = path.join(
+        submissionDirectory,
+        "output.txt"
+    );
+
+    const output = await fs.readFile(
+        outputFilePath,
+        "utf-8"
+    );
+
+    return output.trim();
+};
