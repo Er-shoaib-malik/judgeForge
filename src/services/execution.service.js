@@ -1,5 +1,7 @@
 import {Submission} from "../models/submission.model.js";
 import { createSubmissionDirectory, writeSourceCode } from "../utils/fileManager.js";
+import compileCpp from "../compiler/cpp/compilerCpp.js";
+import runCpp from "../compiler/cpp/runCpp.js";
 
 const executeSubmission = async (submissionId) => {
 
@@ -25,6 +27,41 @@ const executeSubmission = async (submissionId) => {
 
     const sourceCodePath = await writeSourceCode(workingDirectory , submission.language , submission.code) ;
     console.log("Source Code : " ,sourceCodePath);
+
+    let executablePath = null;
+
+    switch (submission.language) {
+        case "cpp":
+            console.log("Before compile");
+
+            executablePath = await compileCpp(sourceCodePath);
+
+            console.log("After compile");
+
+            console.log("Before run");
+            console.log(executablePath);
+            const output = await runCpp(
+                executablePath,
+                "5 10"
+            );
+
+            console.log("After run");
+
+            console.log("Program Output:", output);
+            break;
+
+        case "python":
+            executablePath = sourceCodePath;
+            break;
+
+        case "java":
+            break;
+
+        default:
+            throw new Error("Unsupported language");
+    }
+
+    console.log("Executable Path:", executablePath);
 
     return submission;
 }
