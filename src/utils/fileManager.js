@@ -87,3 +87,10 @@ export const readOutputFile = async (
 
     return output.trim();
 };
+
+export const deleteSubmissionDirectory = async (workingDirectory) => {
+    await fs.rm(workingDirectory, {
+        recursive: true,
+        force: true
+    });
+};

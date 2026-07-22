@@ -4,6 +4,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { User} from "../models/user.model.js"
 import { Problem } from "../models/problem.model.js";
 import { Submission } from "../models/submission.model.js";
+import { TestCase } from "../models/testcase.model.js";
 import mongoose from "mongoose";
 import submissionQueue from "../queue/submission.queue.js";
 
@@ -138,6 +139,44 @@ const deleteProblem = asyncHandler(async (req, res) => {
     );
 });
 
+const addTestCases = asyncHandler(async (req, res) => {
+
+    const { problemId } = req.params;
+    const { input, expectedOutput, hidden } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(problemId)) {
+        throw new ApiError(400, "Invalid Problem Id");
+    }
+
+    if (
+        !input?.trim() ||
+        !expectedOutput?.trim()
+    ) {
+        throw new ApiError(400, "All fields are required");
+    }
+
+    const problem = await Problem.findById(problemId);
+
+    if (!problem) {
+        throw new ApiError(404, "Problem not found");
+    }
+
+    const testCase = await TestCase.create({
+        problemId,
+        input,
+        expectedOutput,
+        hidden
+    });
+
+    return res.status(201).json(
+        new ApiResponse(
+            201,
+            testCase,
+            "Test case created successfully"
+        )
+    );
+});
+
 const submitProblem = asyncHandler(async (req,res) => {
     const {problemId }= req.params
 
@@ -185,4 +224,4 @@ const submitProblem = asyncHandler(async (req,res) => {
     )
 })
 
-export {createProblem,getAllProblems,getProblemById, updateProblem, deleteProblem, submitProblem}
+export {createProblem,getAllProblems,getProblemById, updateProblem, deleteProblem, submitProblem, addTestCases}
