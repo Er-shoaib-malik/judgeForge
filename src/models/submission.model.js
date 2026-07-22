@@ -64,6 +64,13 @@ const submissionSchema = new Schema(
       type: Number,
       default: 0,
     },
+    errorMessage:{
+        type:String
+    },
+
+    errorDetails:{
+        type:String
+    }
   },
   {
     timestamps: true,

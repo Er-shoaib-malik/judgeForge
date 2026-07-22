@@ -9,9 +9,11 @@ import {ApiError} from "../utils/ApiError.js"
 
 const executeSubmission = async (submissionId) => {
 
+    let workingDirectory = null;
+    let submission = null ;
+
     try {
-            const submission = await Submission.findById(submissionId);
-        
+            submission = await Submission.findById(submissionId);
             if (!submission) {
                 throw new Error("Submission not found");
             }
@@ -38,7 +40,7 @@ const executeSubmission = async (submissionId) => {
             console.log("Language:", submission.language);
             console.log("==================================");
         
-            const workingDirectory =
+            workingDirectory =
             await createSubmissionDirectory(
                     submissionId
                 );
@@ -50,19 +52,13 @@ const executeSubmission = async (submissionId) => {
         
             switch (submission.language) {
                 case "cpp":
-                    console.log("Before compile");
-        
+
                     executablePath = await compileCpp(sourceCodePath);
                     console.log("Executable Path:", executablePath);
         
-        
-                    console.log("After compile");
-        
                     let passedTestCases = 0 ;
                     let verdict = "ACCEPTED"
-        
-                    console.log(testCases);
-        
+                
                     const inputFilePath = path.join(
                         workingDirectory,
                         "input.txt"
@@ -72,18 +68,23 @@ const executeSubmission = async (submissionId) => {
                         workingDirectory,
                         "output.txt"
                     )
+
+                    let totalRuntime = 0;
         
                     for(const testCase of testCases){
                         await writeInputFile(
                             workingDirectory,
                             testCase.input
                         )
+
+                        const start = Date.now();
         
                         await runCpp(
                             executablePath ,
                             inputFilePath ,
                             outputFilePath
                         )
+                        totalRuntime += Date.now() - start;
         
                         const output = await readOutputFile(
                             workingDirectory
@@ -104,6 +105,8 @@ const executeSubmission = async (submissionId) => {
         
                     submission.totalTestCases =
                         testCases.length;
+
+                    submission.runtime = totalRuntime ;
         
                     await submission.save();
         
@@ -124,15 +127,42 @@ const executeSubmission = async (submissionId) => {
             }
         
             return submission;
-    } catch (error) {
-        throw error ;
+    } 
+    catch (error) {
+
+        if (submission && submission.status === "RUNNING") {
+
+            submission.status = error.type || "SYSTEM_ERROR";
+
+            submission.errorMessage = error.message;
+
+            if (error.details) {
+                submission.errorDetails = error.details;
+            }
+
+            await submission.save();
+        }
+
+        throw error;
     }
     finally {
-        try {
-            await deleteSubmissionDirectory(workingDirectory);
-        } catch (err) {
-            console.error("Failed to delete working directory:", err);
+
+        if (workingDirectory) {
+
+            try {
+
+                await deleteSubmissionDirectory(
+                    workingDirectory
+                );
+
+            } catch (err) {
+
+                console.error(err);
+
+            }
+
         }
+
     }
 }
 

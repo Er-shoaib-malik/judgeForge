@@ -1,6 +1,6 @@
 import { exec } from "child_process";
 import { promisify } from "util";
-import path from "path";
+import ExecutionError from "../../utils/ExecutionError.js";
 
 const execPromise = promisify(exec);
 
@@ -10,22 +10,32 @@ const runCpp = async (
     outputFilePath
 ) => {
 
-    let command;
+    const command = `"${executablePath}" < "${inputFilePath}" > "${outputFilePath}"`;
 
-    if (process.platform === "win32") {
+    try {
 
-        command = `"${executablePath}" < "${inputFilePath}" > "${outputFilePath}"`;
+        await execPromise(command, {
+            timeout: 2000,
+            maxBuffer: 1024 * 1024
+        });
 
-    } else {
+    } catch (error) {
 
-        command = `"${executablePath}" < "${inputFilePath}" > "${outputFilePath}"`;
+        if (error.killed || error.signal === "SIGTERM") {
 
+            throw new ExecutionError(
+                "TIME_LIMIT_EXCEEDED",
+                "Time Limit Exceeded"
+            );
+
+        }
+
+        throw new ExecutionError(
+            "RUNTIME_ERROR",
+            "Runtime Error",
+            error.stderr
+        );
     }
-
-    await execPromise(command, {
-        timeout: 2000,
-        maxBuffer: 1024 * 1024
-    });
 
 };
 
