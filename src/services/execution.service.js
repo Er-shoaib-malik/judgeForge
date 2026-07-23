@@ -47,14 +47,11 @@ const executeSubmission = async (submissionId) => {
         
             const sourceCodePath = await writeSourceCode(workingDirectory , submission.language , submission.code) ;
             console.log("Source Code : " ,sourceCodePath);
-        
-            let executablePath = null;
-        
+                
             switch (submission.language) {
                 case "cpp":
 
-                    executablePath = await compileCpp(sourceCodePath);
-                    console.log("Executable Path:", executablePath);
+                    await compileCpp(workingDirectory);
         
                     let passedTestCases = 0 ;
                     let verdict = "ACCEPTED"
@@ -79,11 +76,7 @@ const executeSubmission = async (submissionId) => {
 
                         const start = Date.now();
         
-                        await runCpp(
-                            executablePath ,
-                            inputFilePath ,
-                            outputFilePath
-                        )
+                        await runCpp(workingDirectory) ;
                         totalRuntime += Date.now() - start;
         
                         const output = await readOutputFile(

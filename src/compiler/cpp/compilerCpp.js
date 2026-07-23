@@ -1,30 +1,35 @@
 import { exec } from "child_process";
 import { promisify } from "util";
 import path from "path";
-import { tryCatch } from "bullmq";
-import ExecutionError from "../../utils/ExecutionError.js"
+import ExecutionError from "../../utils/ExecutionError.js";
 
 const execPromise = promisify(exec);
 
-const compileCpp = async (sourceCodePath) => {
-  const directory = path.dirname(sourceCodePath);
+const compileCpp = async ( workingDirectory,) => {
 
-  const executableName = process.platform === "win32" ? "main.exe" : "main";
+    const executablePath = path.join(
+        workingDirectory,
+        "main"
+    );
+    const dockerPath = workingDirectory.replace(/\\/g, "/");
+    const command = `docker run --rm -v "${dockerPath}:/app" -w /app judge-cpp g++ main.cpp -o main`;
+    try {
+    
+      console.log(command);
+      await execPromise(command);
 
-  const executablePath = path.join(directory, executableName);
+      return executablePath;
 
-  const compileCommand = `g++ "${sourceCodePath}" -o "${executablePath}"`;
+    } catch (error) {
 
-  try {
-    await execPromise(compileCommand);
-    return executablePath;
-  } catch (error) {
         throw new ExecutionError(
             "COMPILATION_ERROR",
             "Compilation Failed",
             error.stderr
         );
-  }
+
+    }
+
 };
 
 export default compileCpp;

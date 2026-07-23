@@ -5,15 +5,13 @@ import ExecutionError from "../../utils/ExecutionError.js";
 const execPromise = promisify(exec);
 
 const runCpp = async (
-    executablePath,
-    inputFilePath,
-    outputFilePath
+    workingDirectory
 ) => {
 
-    const command = `"${executablePath}" < "${inputFilePath}" > "${outputFilePath}"`;
+    const dockerPath = workingDirectory.replace(/\\/g, "/");
+    const command =`docker run --rm -v "${dockerPath}:/app" -w /app judge-cpp sh -c "./main < input.txt > output.txt"`;
 
     try {
-
         await execPromise(command, {
             timeout: 2000,
             maxBuffer: 1024 * 1024
