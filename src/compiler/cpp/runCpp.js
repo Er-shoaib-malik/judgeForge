@@ -9,7 +9,7 @@ const runCpp = async (
 ) => {
 
     const dockerPath = workingDirectory.replace(/\\/g, "/");
-    const command =`docker run --rm -v "${dockerPath}:/app" -w /app judge-cpp sh -c "./main < input.txt > output.txt"`;
+    const command =`docker run --rm --network none --memory=256m --cpus=1 --pids-limit=100 --security-opt=no-new-privileges -v "${dockerPath}:/app" -w /app judge-cpp sh -c "./main < input.txt > output.txt"`;
 
     try {
         await execPromise(command, {

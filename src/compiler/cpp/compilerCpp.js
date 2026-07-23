@@ -14,11 +14,10 @@ const compileCpp = async ( workingDirectory,) => {
     const dockerPath = workingDirectory.replace(/\\/g, "/");
     const command = `docker run --rm -v "${dockerPath}:/app" -w /app judge-cpp g++ main.cpp -o main`;
     try {
-    
-      console.log(command);
-      await execPromise(command);
+      
+    await execPromise(command);
 
-      return executablePath;
+    return executablePath;
 
     } catch (error) {
 
