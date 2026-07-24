@@ -9,23 +9,24 @@ const runCpp = async (
 ) => {
 
     const dockerPath = workingDirectory.replace(/\\/g, "/");
-    const command =`docker run --rm --network none --memory=256m --cpus=1 --pids-limit=100 --security-opt=no-new-privileges -v "${dockerPath}:/app" -w /app judge-cpp sh -c "./main < input.txt > output.txt"`;
+    const command =`docker run --rm --network none --memory=256m --cpus=1 --pids-limit=100 --security-opt=no-new-privileges -v "${dockerPath}:/app" -w /app judge-cpp sh -c "timeout 2s ./main < input.txt > output.txt"`;
 
     try {
-        await execPromise(command, {
-            timeout: 2000,
-            maxBuffer: 1024 * 1024
-        });
+        await execPromise(command);
 
     } catch (error) {
-
-        if (error.killed || error.signal === "SIGTERM") {
-
+        if (error.killed) {
             throw new ExecutionError(
                 "TIME_LIMIT_EXCEEDED",
                 "Time Limit Exceeded"
             );
+        }
 
+        if (error.code === 137) {
+            throw new ExecutionError(
+                "MEMORY_LIMIT_EXCEEDED",
+                "Memory Limit Exceeded"
+            );
         }
 
         throw new ExecutionError(

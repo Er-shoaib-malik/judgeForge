@@ -12,7 +12,7 @@ const compileCpp = async ( workingDirectory,) => {
         "main"
     );
     const dockerPath = workingDirectory.replace(/\\/g, "/");
-    const command = `docker run --rm -v "${dockerPath}:/app" -w /app judge-cpp g++ main.cpp -o main`;
+    const command = `docker run --rm --network none --memory=256m --cpus=1 --pids-limit=100 --security-opt=no-new-privileges -v "${dockerPath}:/app" -w /app judge-cpp g++ main.cpp -o main`;
     try {
       
     await execPromise(command);
