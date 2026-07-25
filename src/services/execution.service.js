@@ -1,11 +1,9 @@
 import {Submission} from "../models/submission.model.js";
-import { createSubmissionDirectory, writeSourceCode, writeInputFile, readOutputFile ,deleteSubmissionDirectory} from "../utils/fileManager.js";
-import compileCpp from "../compiler/cpp/compilerCpp.js";
-import runCpp from "../compiler/cpp/runCpp.js";
-import path from "path";
+import { createSubmissionDirectory, writeSourceCode, writeInputFile, readOutputFile ,deleteSubmissionDirectory, stats} from "../utils/fileManager.js";
 import {Problem} from "../models/problem.model.js"
 import { TestCase } from "../models/testcase.model.js";
 import {ApiError} from "../utils/ApiError.js"
+import { getLanguageHandler } from "../compiler/index.js";
 
 const executeSubmission = async (submissionId) => {
 
@@ -47,77 +45,60 @@ const executeSubmission = async (submissionId) => {
         
             const sourceCodePath = await writeSourceCode(workingDirectory , submission.language , submission.code) ;
             console.log("Source Code : " ,sourceCodePath);
-                
-            switch (submission.language) {
-                case "cpp":
+            
+            //handler for different languages , throw error if language not supported
+            const languageHandler = getLanguageHandler(submission.language) ;
+            //code compilation
+            await languageHandler.compile(workingDirectory);
 
-                    await compileCpp(workingDirectory);
-        
-                    let passedTestCases = 0 ;
-                    let verdict = "ACCEPTED"
-                
-                    const inputFilePath = path.join(
-                        workingDirectory,
-                        "input.txt"
-                    )
-        
-                    const outputFilePath = path.join(
-                        workingDirectory,
-                        "output.txt"
-                    )
+            let passedTestCases = 0 ;
+            let verdict = "ACCEPTED"
 
-                    let totalRuntime = 0;
-        
-                    for(const testCase of testCases){
-                        await writeInputFile(
-                            workingDirectory,
-                            testCase.input
-                        )
+            let totalRuntime = 0;
+            let peakMemory = 0;
+            
+            //running testcase with docker containers for each testcase
+            for(const testCase of testCases){
+                await writeInputFile(
+                    workingDirectory,
+                    testCase.input
+                )
 
-                        const start = Date.now();
-        
-                        await runCpp(workingDirectory) ;
-                        totalRuntime += Date.now() - start;
-        
-                        const output = await readOutputFile(
-                            workingDirectory
-                        )
-        
-                        if(
-                            output.trim() !== testCase.expectedOutput.trim()
-                        ){
-                            verdict = "WRONG_ANSWER"
-                            break ;
-                        }
-                        passedTestCases++ ;
-                    }
-                    submission.status = verdict;
-        
-                    submission.passedTestCases =
-                        passedTestCases;
-        
-                    submission.totalTestCases =
-                        testCases.length;
+                await languageHandler.run(workingDirectory);
 
-                    submission.runtime = totalRuntime ;
-        
-                    await submission.save();
-        
-                    console.log(`Verdict: ${verdict}`);
-                    console.log(`Passed: ${passedTestCases}/${testCases.length}`);
-                    
-                    break;
-        
-                case "python":
-                    executablePath = sourceCodePath;
-                    break;
-        
-                case "java":
-                    break;
-        
-                default:
-                    throw new Error("Unsupported language");
+                const [runtime, memory] = ( await stats(workingDirectory)).trim().split(" ");
+
+                totalRuntime += Number(runtime) * 1000;
+                peakMemory = Math.max(peakMemory, Number(memory));
+
+                const output = await readOutputFile(
+                    workingDirectory
+                )
+
+                if(
+                    output.trim() !== testCase.expectedOutput.trim()
+                ){
+                    verdict = "WRONG_ANSWER"
+                    break ;
+                }
+                passedTestCases++ ;
             }
+
+            submission.status = verdict;
+
+            submission.passedTestCases =
+                passedTestCases;
+
+            submission.totalTestCases =
+                testCases.length;
+
+            submission.runtime = Math.round(totalRuntime);
+            submission.memory = peakMemory;
+
+            await submission.save();
+
+            console.log(`Verdict: ${verdict}`);
+            console.log(`Passed: ${passedTestCases}/${testCases.length}`);
         
             return submission;
     } 

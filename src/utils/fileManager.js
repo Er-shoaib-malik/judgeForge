@@ -1,5 +1,6 @@
 import fs from "fs/promises";
 import path from "path";
+import {LANGUAGE_CONFIG} from "../compiler/constants.js"
 
 const TEMP_DIRECTORY = path.join(process.cwd(), "temp");
 
@@ -23,29 +24,11 @@ export const writeSourceCode = async (
     code
 ) => {
 
-    let fileName;
-
-    switch (language) {
-
-        case "cpp":
-            fileName = "main.cpp";
-            break;
-
-        case "python":
-            fileName = "main.py";
-            break;
-
-        case "java":
-            fileName = "Main.java";
-            break;
-
-        default:
-            throw new Error("Unsupported Language");
-    }
+    const filename = LANGUAGE_CONFIG[language].filename;
 
     const sourceCodePath = path.join(
         submissionDirectory,
-        fileName
+        filename
     );
 
     await fs.writeFile(
@@ -93,4 +76,10 @@ export const deleteSubmissionDirectory = async (workingDirectory) => {
         recursive: true,
         force: true
     });
+};
+
+export const stats = async (workingDirectory) => {
+    const statsPath = path.join(workingDirectory, "stats.txt");
+
+    return fs.readFile(statsPath, "utf-8");
 };

@@ -1,21 +1,23 @@
 import { exec } from "child_process";
 import { promisify } from "util";
 import ExecutionError from "../../utils/ExecutionError.js";
+import { LANGUAGE_CONFIG } from "../constants.js";
 
 const execPromise = promisify(exec);
 
-const runCpp = async (
+const run = async (
     workingDirectory
 ) => {
 
     const dockerPath = workingDirectory.replace(/\\/g, "/");
-    const command =`docker run --rm --network none --memory=256m --cpus=1 --pids-limit=100 --security-opt=no-new-privileges -v "${dockerPath}:/app" -w /app judge-cpp sh -c "timeout 2s ./main < input.txt > output.txt"`;
+    const { filename, dockerImage } = LANGUAGE_CONFIG.python;
+    const command =`docker run --rm --network none --memory=256m --cpus=1 --pids-limit=100 --security-opt=no-new-privileges -v "${dockerPath}:/app" -w /app ${dockerImage} sh -c "/usr/bin/time -f '%e %M' -o stats.txt timeout 2s python3 ${filename} < input.txt > output.txt"`;
 
     try {
         await execPromise(command);
 
     } catch (error) {
-        if (error.killed) {
+        if (error.code === 124) {
             throw new ExecutionError(
                 "TIME_LIMIT_EXCEEDED",
                 "Time Limit Exceeded"
@@ -38,4 +40,4 @@ const runCpp = async (
 
 };
 
-export default runCpp;
+export default run;

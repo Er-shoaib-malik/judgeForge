@@ -1,23 +1,20 @@
+
 import { exec } from "child_process";
 import { promisify } from "util";
 import path from "path";
 import ExecutionError from "../../utils/ExecutionError.js";
+import { LANGUAGE_CONFIG } from "../constants.js";
 
 const execPromise = promisify(exec);
 
-const compileCpp = async ( workingDirectory,) => {
+const compile = async ( workingDirectory,) => {
 
-    const executablePath = path.join(
-        workingDirectory,
-        "main"
-    );
     const dockerPath = workingDirectory.replace(/\\/g, "/");
-    const command = `docker run --rm --network none --memory=256m --cpus=1 --pids-limit=100 --security-opt=no-new-privileges -v "${dockerPath}:/app" -w /app judge-cpp g++ main.cpp -o main`;
+    const { filename, dockerImage } = LANGUAGE_CONFIG.java;
+    const command = `docker run --rm --network none --memory=256m --cpus=1 --pids-limit=100 --security-opt=no-new-privileges -v "${dockerPath}:/app" -w /app ${dockerImage} javac ${filename}`;
     try {
       
-    await execPromise(command);
-
-    return executablePath;
+        await execPromise(command);
 
     } catch (error) {
 
@@ -31,4 +28,4 @@ const compileCpp = async ( workingDirectory,) => {
 
 };
 
-export default compileCpp;
+export default compile;

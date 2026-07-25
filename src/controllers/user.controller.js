@@ -3,6 +3,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import {User} from "../models/user.model.js"
+import mongoose from "mongoose";
 
 const options = {
     httpOnly : true ,
@@ -130,6 +131,37 @@ const logoutUser = asyncHandler(async (req,res) => {
     .json(
         new ApiResponse(200 , "user logged out")
     )
+})
+
+const updatePassword = asyncHandler(async (req,res)=>{
+    const {oldPassword,newPassword} = req.body
+    const {id} = req.params 
+
+    if(!mongoose.Types.ObjectId.isValid(id)){
+        throw new ApiError(400 ,"invalid user")
+    }
+
+    if(!oldPassword || !newPassword){
+        throw new ApiError(400,"All fields required")
+    }
+
+    const user = await User.findById(id) ;
+
+    const isvalidated = await user.isPasswordCorrect(oldPassword)
+
+    if(!isvalidated){
+        throw new ApiError(403, "Password is incorrect")
+    }
+
+    user.password = newPassword ;
+    user.save() ;
+
+    return res
+    .status(201)
+    .json(
+        new ApiResponse(201,"password updated succeddfully")
+    )
+
 })
 
 export {registerUser ,loginUser, logoutUser} 
