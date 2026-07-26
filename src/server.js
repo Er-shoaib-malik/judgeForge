@@ -1,12 +1,10 @@
-import dotenv from "dotenv"
+import "./config/env.js"
 import express from "express"
 import app from "./app.js"
 import connectDB from "./config/db.js";
 import "./workers/submission.worker.js"
 
-dotenv.config({
-    path: './.env'
-});
+
 const PORT = process.env.PORT || 8000
 
 connectDB()

@@ -1,4 +1,4 @@
-import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import { deleteFromCloudinary, uploadOnCloudinary } from "../utils/cloudinary.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
@@ -87,7 +87,7 @@ const loginUser = asyncHandler(async (req,res) => {
         throw new ApiError(404 , "user with username or email doesn't exists")
     }
 
-    const validated = user.isPasswordCorrect(password)
+    const validated = await user.isPasswordCorrect(password)
 
     if(!validated){
         throw new ApiError(401 , "Password is incorrect")
@@ -135,14 +135,10 @@ const logoutUser = asyncHandler(async (req,res) => {
 
 const updatePassword = asyncHandler(async (req,res)=>{
     const {oldPassword,newPassword} = req.body
-    const {id} = req.params 
-
-    if(!mongoose.Types.ObjectId.isValid(id)){
-        throw new ApiError(400 ,"invalid user")
-    }
+    const id = req.user._id
 
     if(!oldPassword || !newPassword){
-        throw new ApiError(400,"All fields required")
+        throw new ApiError(400,"All fields are required")
     }
 
     const user = await User.findById(id) ;
@@ -150,11 +146,11 @@ const updatePassword = asyncHandler(async (req,res)=>{
     const isvalidated = await user.isPasswordCorrect(oldPassword)
 
     if(!isvalidated){
-        throw new ApiError(403, "Password is incorrect")
+        throw new ApiError(403, "Old password is incorrect")
     }
 
     user.password = newPassword ;
-    user.save() ;
+    await user.save() ;
 
     return res
     .status(201)
@@ -164,4 +160,69 @@ const updatePassword = asyncHandler(async (req,res)=>{
 
 })
 
-export {registerUser ,loginUser, logoutUser} 
+const updateProfile = asyncHandler(async(req,res)=>{
+    //only fullName bio
+    const {fullName ,bio} = req.body
+
+    if(!fullName){
+        throw new ApiError(400, "full Name can not be empty")
+    }
+
+    if(bio && bio.length > 100){
+        throw new ApiError(400, "bio characters should be less than 100 ")
+    }
+
+    const user = await User.findByIdAndUpdate(req.user._id ,
+        {
+            $set : {
+                fullName,
+                bio
+            }
+        },
+        {
+            new : true
+        }
+    ).select("-password -refreshToken")
+
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200,user, "Profile updated Successfully")
+    )
+})
+
+const updateAvatar = asyncHandler(async (req,res) => {
+    const avatarLocalPath = req.files?.avatar?.[0]?.path
+
+    if(!avatarLocalPath){
+        throw new ApiError(400, "avatar is required")
+    }
+
+    await deleteFromCloudinary(req.user.avatarPublicId) ;
+
+    const avatar = await uploadOnCloudinary(avatarLocalPath)
+
+    if(!avatar || !avatar.url){
+        throw new ApiError(500 ,"Error while uploading avatar")
+    }
+
+    const user = await User.findByIdAndUpdate(req.user._id, 
+        {
+            $set : {
+                avatar : avatar.secure_url ,
+                avatarPublicId : avatar.public_id
+            }
+        },
+        {
+            new : true
+        }
+    ).select("-password -refreshToken")
+
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200 ,user, "avatar udpated successfully")
+    )
+})
+
+export {registerUser ,loginUser, logoutUser,updatePassword , updateProfile , updateAvatar} 

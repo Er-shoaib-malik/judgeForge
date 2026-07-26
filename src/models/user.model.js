@@ -10,6 +10,12 @@ const userSchema = new Schema(
       trim: true,
     },
 
+    bio : {
+      type : String ,
+      trim : true ,
+      default : ""
+    } ,
+
     username: {
       type: String,
       required: true,
@@ -34,6 +40,9 @@ const userSchema = new Schema(
       type: String,
       default: "",
     },
+    avatarPublicId: {
+      type : String
+    } , 
 
     rating: {
       type: Number,
@@ -61,8 +70,8 @@ userSchema.pre("save" ,async function () {
   this.password = await bcrypt.hash(this.password ,11)
 })
 
-userSchema.methods.isPasswordCorrect = function (password) {
-  return bcrypt.compare(password , this.password)
+userSchema.methods.isPasswordCorrect =async function (password) {
+  return await bcrypt.compare(password , this.password)
 }
 
 userSchema.methods.generateAccessToken = function () {
