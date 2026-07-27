@@ -6,9 +6,10 @@ import {User} from "../models/user.model.js"
 import mongoose from "mongoose";
 
 const options = {
-    httpOnly : true ,
-    secure : true
-}
+    httpOnly: true,
+    secure: false,
+    sameSite: "lax",
+};
 
 const generateAccessAndRefreshToken = async (userid) =>{
     try {
@@ -104,9 +105,7 @@ const loginUser = asyncHandler(async (req,res) => {
     .json(
         new ApiResponse(
             200,
-            {
-                user : loggedInUser, accessToken ,refreshToken
-            },
+            user,
             "User logged In Successfully"
         )
     )

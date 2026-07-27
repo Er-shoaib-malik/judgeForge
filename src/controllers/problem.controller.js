@@ -57,7 +57,7 @@ const getAllProblems = asyncHandler(async (req,res) => {
 })
 
 const getProblemById = asyncHandler(async (req,res) => {
-    const {problemId} = req.params 
+    const {problemId} = req.params
 
     if (!mongoose.Types.ObjectId.isValid(problemId)) {
         throw new ApiError(400, "Invalid problem id");
@@ -139,89 +139,8 @@ const deleteProblem = asyncHandler(async (req, res) => {
     );
 });
 
-const addTestCases = asyncHandler(async (req, res) => {
 
-    const { problemId } = req.params;
-    const { input, expectedOutput, hidden } = req.body;
 
-    if (!mongoose.Types.ObjectId.isValid(problemId)) {
-        throw new ApiError(400, "Invalid Problem Id");
-    }
 
-    if (
-        !input?.trim() ||
-        !expectedOutput?.trim()
-    ) {
-        throw new ApiError(400, "All fields are required");
-    }
 
-    const problem = await Problem.findById(problemId);
-
-    if (!problem) {
-        throw new ApiError(404, "Problem not found");
-    }
-
-    const testCase = await TestCase.create({
-        problemId,
-        input,
-        expectedOutput,
-        hidden
-    });
-
-    return res.status(201).json(
-        new ApiResponse(
-            201,
-            testCase,
-            "Test case created successfully"
-        )
-    );
-});
-
-const submitProblem = asyncHandler(async (req,res) => {
-    const {problemId }= req.params
-
-    if (!mongoose.Types.ObjectId.isValid(problemId)) {
-        throw new ApiError(400, "Invalid problem id");
-    }
-
-    const isProblemExist = await Problem.findById(problemId) ;
-
-    if(!isProblemExist){
-        throw new ApiError(404, "Problem doesn't exist")
-    }
-
-    const {language, code} = req.body
-
-    if (!language?.trim() || !code?.trim()) {
-        throw new ApiError(400, "Language and code are required");
-    }
-
-    const allowedLanguages = ["cpp", "java", "python"];
-
-    if (!allowedLanguages.includes(language)) {
-        throw new ApiError(400, "Unsupported language");
-    }
-
-    const submission = await Submission.create({
-        problemId,
-        userId: req.user._id,
-        language,
-        code,
-        status: "PENDING",
-    });
-
-    await submissionQueue.add(
-        "execute-submission",
-        {
-            submissionId : submission._id.toString(),
-        }
-    )
-
-    return res
-    .status(201)
-    .json(
-        new ApiResponse(201,submission, "Submission created successfully" )
-    )
-})
-
-export {createProblem,getAllProblems,getProblemById, updateProblem, deleteProblem, submitProblem, addTestCases}
+export {createProblem,getAllProblems,getProblemById, updateProblem, deleteProblem}
