@@ -3,6 +3,7 @@ import {Submission} from "../models/submission.model.js"
 import { ApiResponse } from "../utils/ApiResponse.js"
 import mongoose from "mongoose"
 import { Problem } from "../models/problem.model.js"
+import submissionQueue from "../queue/submission.queue.js";
 
 const createSubmission = asyncHandler(async (req,res) => {
     const {problemId}= req.params
@@ -70,7 +71,7 @@ const problemSubmissions = asyncHandler(async (req,res)=>{
     const {problemId} = req.params
     const userId = req.user._id
 
-    Submission.find({
+    const submissions = await Submission.find({
         $and: [
             { problemId },
             { userId }
@@ -84,4 +85,24 @@ const problemSubmissions = asyncHandler(async (req,res)=>{
     )
 })
 
-export {userSubmissions ,problemSubmissions,createSubmission}
+const runCode = asyncHandler(async (req, res) => {
+
+    const { problemId } = req.params;
+    const { language, code } = req.body;
+
+    const result = await executeRunCode({
+        problemId,
+        language,
+        code,
+    });
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            result,
+            "Code executed successfully"
+        )
+    );
+});
+
+export {userSubmissions ,problemSubmissions,createSubmission ,runCode}

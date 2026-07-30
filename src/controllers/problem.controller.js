@@ -6,7 +6,6 @@ import { Problem } from "../models/problem.model.js";
 import { Submission } from "../models/submission.model.js";
 import { TestCase } from "../models/testcase.model.js";
 import mongoose from "mongoose";
-import submissionQueue from "../queue/submission.queue.js";
 
 const createProblem = asyncHandler(async (req,res) => {
     const {title, difficulty, constraints ,statement ,examples,timeLimit ,memoryLimit} = req.body

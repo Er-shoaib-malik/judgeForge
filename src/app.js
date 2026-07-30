@@ -23,7 +23,7 @@ app.use(cookieParser())
 app.use("/users", userRoutes)
 app.use("/problems",problemRoutes)
 app.use("/submissions",submissionRoutes)
-app.use("/testcase",testCaseRoutes)
+app.use("/testcases",testCaseRoutes)
 
 app.use(errorHandler)
 

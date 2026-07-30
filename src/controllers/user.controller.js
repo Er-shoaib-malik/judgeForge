@@ -7,7 +7,7 @@ import mongoose from "mongoose";
 
 const options = {
     httpOnly: true,
-    secure: false,
+    secure: true,
     sameSite: "lax",
 };
 

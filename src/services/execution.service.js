@@ -22,7 +22,8 @@ const executeSubmission = async (submissionId) => {
                 throw new ApiError(404,"Problem not found")
             }
             const testCases = await TestCase.find({
-                problemId : problem._id
+                problemId : problem._id ,
+                hidden : true
             })
         
             if (testCases.length === 0) {
@@ -101,7 +102,7 @@ const executeSubmission = async (submissionId) => {
             console.log(`Passed: ${passedTestCases}/${testCases.length}`);
         
             return submission;
-    } 
+    }
     catch (error) {
 
         if (submission && submission.status === "RUNNING") {
@@ -139,5 +140,133 @@ const executeSubmission = async (submissionId) => {
 
     }
 }
+
+const executeRunCode = async (submission) => {
+
+    let workingDirectory = null;
+
+    try {
+
+        const problem = await Problem.findById(submission.problemId);
+
+        if (!problem) {
+            throw new ApiError(404, "Problem not found");
+        }
+
+        const testCases = await TestCase.find({
+            problemId: problem._id,
+            hidden: false,
+        });
+
+        if (testCases.length === 0) {
+            throw new ApiError(
+                404,
+                "No sample testcases available"
+            );
+        }
+
+        console.log("==================================");
+        console.log("Running Sample Testcases");
+        console.log("Language:", submission.language);
+        console.log("==================================");
+
+        workingDirectory = await createSubmissionDirectory(
+            `run-${Date.now()}`
+        );
+
+        await writeSourceCode(
+            workingDirectory,
+            submission.language,
+            submission.code
+        );
+
+        const languageHandler =
+            getLanguageHandler(submission.language);
+
+        // Compile only once
+        await languageHandler.compile(workingDirectory);
+
+        let totalRuntime = 0;
+        let peakMemory = 0;
+
+        const results = [];
+
+        for (let i = 0; i < testCases.length; i++) {
+
+            const testCase = testCases[i];
+
+            await writeInputFile(
+                workingDirectory,
+                testCase.input
+            );
+
+            await languageHandler.run(
+                workingDirectory
+            );
+
+            const [runtime, memory] =
+                (await stats(workingDirectory))
+                    .trim()
+                    .split(" ");
+
+            totalRuntime += Number(runtime) * 1000;
+            peakMemory = Math.max(
+                peakMemory,
+                Number(memory)
+            );
+
+            const output =
+                await readOutputFile(
+                    workingDirectory
+                );
+
+            const passed =
+                output.trim() ===
+                testCase.expectedOutput.trim();
+
+            results.push({
+                testcase: i + 1,
+                status: passed
+                    ? "PASSED"
+                    : "FAILED",
+                input: testCase.input,
+                expectedOutput:
+                    testCase.expectedOutput,
+                actualOutput: output.trim(),
+                runtime:
+                    Math.round(
+                        Number(runtime) * 1000
+                    ),
+                memory: Number(memory),
+            });
+        }
+
+        return {
+            runtime: Math.round(totalRuntime),
+            memory: peakMemory,
+            passed:
+                results.filter(
+                    r => r.status === "PASSED"
+                ).length,
+            total: results.length,
+            results,
+        };
+
+    } finally {
+
+        if (workingDirectory) {
+
+            try {
+                await deleteSubmissionDirectory(
+                    workingDirectory
+                );
+            } catch (err) {
+                console.error(err);
+            }
+
+        }
+
+    }
+};
 
 export default executeSubmission;
