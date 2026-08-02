@@ -68,6 +68,7 @@ const registerUser = asyncHandler(async (req,res) => {
 
 const loginUser = asyncHandler(async (req,res) => {
     const {username , email , password} = req?.body
+    console.log(email) ;
 
     if(!username && !email){
         throw new ApiError(400 , "username or email is required")
@@ -224,4 +225,21 @@ const updateAvatar = asyncHandler(async (req,res) => {
     )
 })
 
-export {registerUser ,loginUser, logoutUser,updatePassword , updateProfile , updateAvatar} 
+const currentUser = asyncHandler(async (req, res) => {
+    const user = await User.findById(req.user._id)
+        .select("-password -refreshToken");
+
+    if (!user) {
+        throw new ApiError(404, "User not found");
+    }
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            user,
+            "Current user fetched successfully"
+        )
+    );
+});
+
+export {registerUser ,loginUser, logoutUser,updatePassword , updateProfile , updateAvatar ,currentUser} 

@@ -3,7 +3,7 @@ import {Submission} from "../models/submission.model.js"
 import { ApiResponse } from "../utils/ApiResponse.js"
 import mongoose from "mongoose"
 import { Problem } from "../models/problem.model.js"
-import submissionQueue from "../queue/submission.queue.js";
+import {executeRunCode} from "../services/execution.service.js"
 
 const createSubmission = asyncHandler(async (req,res) => {
     const {problemId}= req.params
@@ -57,8 +57,10 @@ const userSubmissions = asyncHandler( async (req,res) =>{
     const userId = req.user._id
 
     const submissions = await Submission.find({
-        userId
-    }).sort({ createdAt: -1 });
+        userId,
+    })
+    .populate("problemId", "title difficulty")
+    .sort({ createdAt: -1 });    
 
     return res
     .status(200)
@@ -71,12 +73,16 @@ const problemSubmissions = asyncHandler(async (req,res)=>{
     const {problemId} = req.params
     const userId = req.user._id
 
+    if (!mongoose.Types.ObjectId.isValid(problemId)) {
+        throw new ApiError(400, "Invalid problem id");
+    }
+
     const submissions = await Submission.find({
-        $and: [
-            { problemId },
-            { userId }
-        ]
+        problemId,
+        userId,
     })
+    .populate("problemId", "title difficulty")
+    .sort({ createdAt: -1 });
 
     return res
     .status(200)
@@ -84,6 +90,32 @@ const problemSubmissions = asyncHandler(async (req,res)=>{
         new ApiResponse(200,submissions,"User submissions related to problem fetched successfully")
     )
 })
+
+const getSubmission = asyncHandler(async (req, res) => {
+
+    const { submissionId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(submissionId)) {
+        throw new ApiError(400, "Invalid submission id");
+    }
+
+    const submission = await Submission.findById(submissionId)
+        .populate("problemId", "title difficulty")
+        .populate("userId", "fullName username");
+
+    if (!submission) {
+        throw new ApiError(404, "Submission not found");
+    }
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            submission,
+            "Submission fetched successfully"
+        )
+    );
+
+});
 
 const runCode = asyncHandler(async (req, res) => {
 
@@ -105,4 +137,4 @@ const runCode = asyncHandler(async (req, res) => {
     );
 });
 
-export {userSubmissions ,problemSubmissions,createSubmission ,runCode}
+export {userSubmissions ,problemSubmissions,createSubmission ,runCode ,getSubmission}

@@ -141,7 +141,7 @@ const executeSubmission = async (submissionId) => {
     }
 }
 
-const executeRunCode = async (submission) => {
+export const executeRunCode = async (submission) => {
 
     let workingDirectory = null;
 
@@ -240,6 +240,8 @@ const executeRunCode = async (submission) => {
                 memory: Number(memory),
             });
         }
+
+        console.log("Run code is done") ;
 
         return {
             runtime: Math.round(totalRuntime),

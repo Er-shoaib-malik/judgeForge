@@ -9,6 +9,6 @@ router.use(verifyJWT)
 router.route("/:problemId/submit").post(createSubmission)
 router.route("/Allsubmissions").get(userSubmissions)
 router.route("/:problemId/submissions").get(problemSubmissions)
-router.route("/:problemId/run").get(runCode) ;
+router.route("/:problemId/run").post(runCode) ;
 
 export default router ;
