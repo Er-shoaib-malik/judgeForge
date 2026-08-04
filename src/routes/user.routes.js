@@ -12,9 +12,9 @@ router.route("/login").post(loginUser)
 router.use(verifyJWT)
 router.route("/current-user").get(currentUser)
 router.route("/logout").post(logoutUser)
-router.route("/updatePassword").patch(updatePassword)
-router.route("/updateProfile").patch(updateProfile)
-router.route("/updateAvatar").patch(
+router.route("/update-password").patch(updatePassword)
+router.route("/update-profile").patch(updateProfile)
+router.route("/update-avatar").patch(
     upload.fields([
         {
             name: "avatar",

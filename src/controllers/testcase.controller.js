@@ -43,6 +43,58 @@ const addTestCase = asyncHandler(async (req, res) => {
     );
 });
 
+const addBulkTestCase = asyncHandler(async (req, res) => {
+
+    const { problemId, testCases } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(problemId)) {
+        throw new ApiError(400, "Invalid problem id");
+    }
+
+    const problem = await Problem.findById(problemId);
+
+    if (!problem) {
+        throw new ApiError(404, "Problem not found");
+    }
+
+    if (!Array.isArray(testCases) || testCases.length === 0) {
+        throw new ApiError(400, "Test cases array is required");
+    }
+
+    const formattedTestCases = testCases.map((testCase) => {
+
+        if (
+            !testCase.input?.trim() ||
+            !testCase.expectedOutput?.trim()
+        ) {
+            throw new ApiError(
+                400,
+                "Each test case must contain input and expectedOutput"
+            );
+        }
+
+        return {
+            problemId,
+            input: testCase.input,
+            expectedOutput: testCase.expectedOutput,
+            hidden: testCase.hidden ?? true,
+        };
+    });
+
+    const createdTestCases = await TestCase.insertMany(
+        formattedTestCases
+    );
+
+    return res.status(201).json(
+        new ApiResponse(
+            201,
+            createdTestCases,
+            `${createdTestCases.length} test cases added successfully`
+        )
+    );
+
+});
+
 const getProblemTestCases = asyncHandler(async (req, res) => {
     const { problemId } = req.params;
 
@@ -128,4 +180,4 @@ const deleteTestCase = asyncHandler(async (req, res) => {
     );
 });
 
-export {addTestCase,getProblemTestCases,updateTestCase,deleteTestCase}
+export {addTestCase,getProblemTestCases,updateTestCase,deleteTestCase,addBulkTestCase}

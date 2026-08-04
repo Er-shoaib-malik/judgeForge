@@ -42,18 +42,59 @@ const createProblem = asyncHandler(async (req,res) => {
     )
 })
 
-const getAllProblems = asyncHandler(async (req,res) => {
-    const retrievedProblems = await Problem.find() ;
+const getAllProblems = asyncHandler(async (req, res) => {
 
-    if(retrievedProblems.length === 0){
-        throw new ApiError(500, "No Problems found")
+    const {
+        page = 1,
+        limit = 10,
+        search = "",
+        difficulty,
+    } = req.query;
+
+    const filter = {};
+
+    if (search) {
+        filter.title = {
+            $regex: search,
+            $options: "i",
+        };
     }
-    return res
-    .status(200)
-    .json(
-        new ApiResponse(200,retrievedProblems,"Problems fetched successfully")
-    )
-})
+
+    if (difficulty) {
+        filter.difficulty = difficulty;
+    }
+
+    const totalProblems = await Problem.countDocuments(filter);
+
+    const problems = await Problem.find(filter)
+        .sort({ createdAt: -1 })
+        .skip((Number(page) - 1) * Number(limit))
+        .limit(Number(limit));
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            {
+                problems,
+                pagination: {
+                    currentPage: Number(page),
+                    totalPages: Math.ceil(
+                        totalProblems / Number(limit)
+                    ),
+                    totalProblems,
+                    limit: Number(limit),
+                    hasNextPage:
+                        Number(page) <
+                        Math.ceil(totalProblems / Number(limit)),
+                    hasPrevPage:
+                        Number(page) > 1,
+                },
+            },
+            "Problems fetched successfully"
+        )
+    );
+
+});
 
 const getProblemById = asyncHandler(async (req,res) => {
     const {problemId} = req.params

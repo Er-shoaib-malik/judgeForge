@@ -4,10 +4,11 @@ import { ApiResponse } from "../utils/ApiResponse.js"
 import mongoose from "mongoose"
 import { Problem } from "../models/problem.model.js"
 import {executeRunCode} from "../services/execution.service.js"
+import submissionQueue from"../queue/submission.queue.js"
 
 const createSubmission = asyncHandler(async (req,res) => {
     const {problemId}= req.params
-    console.log(problemId.problemId)
+    console.log(problemId)
 
     if (!mongoose.Types.ObjectId.isValid(problemId)) {
         throw new ApiError(400, "Invalid problem id");
@@ -53,43 +54,123 @@ const createSubmission = asyncHandler(async (req,res) => {
     )
 })
 
-const userSubmissions = asyncHandler( async (req,res) =>{
-    const userId = req.user._id
+const userSubmissions = asyncHandler(async (req, res) => {
 
-    const submissions = await Submission.find({
+    const userId = req.user._id;
+
+    const {
+        page = 1,
+        limit = 10,
+        status,
+        language,
+    } = req.query;
+
+    const filter = {
         userId,
-    })
-    .populate("problemId", "title difficulty")
-    .sort({ createdAt: -1 });    
+    };
 
-    return res
-    .status(200)
-    .json(
-        new ApiResponse(200,submissions,"User submissions fetched successfully")
-    )
-})
+    if (status) {
+        filter.status = status;
+    }
 
-const problemSubmissions = asyncHandler(async (req,res)=>{
-    const {problemId} = req.params
-    const userId = req.user._id
+    if (language) {
+        filter.language = language;
+    }
+
+    const totalSubmissions = await Submission.countDocuments(filter);
+
+    const submissions = await Submission.find(filter)
+        .populate("problemId", "title difficulty")
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(Number(limit));
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            {
+                submissions,
+                pagination: {
+                    currentPage: Number(page),
+                    totalPages: Math.ceil(
+                        totalSubmissions / limit
+                    ),
+                    totalSubmissions,
+                    limit: Number(limit),
+                    hasNextPage:
+                        page * limit < totalSubmissions,
+                    hasPrevPage:
+                        page > 1,
+                },
+            },
+            "User submissions fetched successfully"
+        )
+    );
+
+});
+
+const problemSubmissions = asyncHandler(async (req, res) => {
+
+    const { problemId } = req.params;
+
+    const userId = req.user._id;
 
     if (!mongoose.Types.ObjectId.isValid(problemId)) {
         throw new ApiError(400, "Invalid problem id");
     }
 
-    const submissions = await Submission.find({
+    const {
+        page = 1,
+        limit = 10,
+        status,
+        language,
+    } = req.query;
+
+    const filter = {
         problemId,
         userId,
-    })
-    .populate("problemId", "title difficulty")
-    .sort({ createdAt: -1 });
+    };
 
-    return res
-    .status(200)
-    .json(
-        new ApiResponse(200,submissions,"User submissions related to problem fetched successfully")
-    )
-})
+    if (status) {
+        filter.status = status;
+    }
+
+    if (language) {
+        filter.language = language;
+    }
+
+    const totalSubmissions =
+        await Submission.countDocuments(filter);
+
+    const submissions = await Submission.find(filter)
+        .populate("problemId", "title difficulty")
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(Number(limit));
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            {
+                submissions,
+                pagination: {
+                    currentPage: Number(page),
+                    totalPages: Math.ceil(
+                        totalSubmissions / limit
+                    ),
+                    totalSubmissions,
+                    limit: Number(limit),
+                    hasNextPage:
+                        page * limit < totalSubmissions,
+                    hasPrevPage:
+                        page > 1,
+                },
+            },
+            "Problem submissions fetched successfully"
+        )
+    );
+
+});
 
 const getSubmission = asyncHandler(async (req, res) => {
 
