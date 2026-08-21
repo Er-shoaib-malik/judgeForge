@@ -33,11 +33,11 @@ const executeSubmission = async (submissionId) => {
             submission.status = "RUNNING";
             await submission.save();
         
-            console.log("==================================");
-            console.log("Executing Submission");
-            console.log("Submission:", submission._id);
-            console.log("Language:", submission.language);
-            console.log("==================================");
+            // console.log("==================================");
+            // console.log("Executing Submission");
+            // console.log("Submission:", submission._id);
+            // console.log("Language:", submission.language);
+            // console.log("==================================");
         
             workingDirectory =
             await createSubmissionDirectory(
@@ -45,7 +45,7 @@ const executeSubmission = async (submissionId) => {
                 );
         
             const sourceCodePath = await writeSourceCode(workingDirectory , submission.language , submission.code) ;
-            console.log("Source Code : " ,sourceCodePath);
+            // console.log("Source Code : " ,sourceCodePath);
             
             //handler for different languages , throw error if language not supported
             const languageHandler = getLanguageHandler(submission.language) ;
@@ -98,8 +98,8 @@ const executeSubmission = async (submissionId) => {
 
             await submission.save();
 
-            console.log(`Verdict: ${verdict}`);
-            console.log(`Passed: ${passedTestCases}/${testCases.length}`);
+            // console.log(`Verdict: ${verdict}`);
+            // console.log(`Passed: ${passedTestCases}/${testCases.length}`);
         
             return submission;
     }
@@ -165,10 +165,10 @@ export const executeRunCode = async (submission) => {
             );
         }
 
-        console.log("==================================");
-        console.log("Running Sample Testcases");
-        console.log("Language:", submission.language);
-        console.log("==================================");
+        // console.log("==================================");
+        // console.log("Running Sample Testcases");
+        // console.log("Language:", submission.language);
+        // console.log("==================================");
 
         workingDirectory = await createSubmissionDirectory(
             `run-${Date.now()}`
@@ -241,7 +241,7 @@ export const executeRunCode = async (submission) => {
             });
         }
 
-        console.log("Run code is done") ;
+        // console.log("Run code is done") ;
 
         return {
             runtime: Math.round(totalRuntime),
